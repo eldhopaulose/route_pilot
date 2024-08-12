@@ -1,0 +1,32 @@
+name: route_pilot
+description: "A Flutter package that simplifies navigation and routing with custom transitions, easy argument passing, and a clean API for managing routes in your Flutter applications."
+version: 0.0.1
+homepage:
+
+homepage: "https://github.com/eldhopaulose/route_pilot.git"
+
+repository: "https://github.com/eldhopaulose/route_pilot.git"
+
+issue_tracker: "https://github.com/eldhopaulose/route_pilot.git"
+
+license: MIT
+
+authors_url: "https://github.com/eldhopaulose"
+
+environment:
+  sdk: '>=3.4.3 <4.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+
+flutter:
+
+ 

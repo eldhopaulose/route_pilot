@@ -1,0 +1,21 @@
+name: route_pilot_example
+description: Example app for the easy_route package
+version: 0.0.1
+
+publish_to: "none"
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  route_pilot:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
