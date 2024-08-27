@@ -6,283 +6,379 @@
 ![Flutter Favorite](https://img.shields.io/badge/Flutter-Favorite-blue)
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Web%20%7C%20MacOS%20%7C%20Windows%20%7C%20Linux-green)
 
-**RoutePilot** is a simple yet powerful routing package for Flutter, designed to simplify navigation across your Flutter apps. It provides custom transitions, argument handling, and easy-to-use navigation functions.
+**RoutePilot** is a powerful Flutter package that simplifies navigation and URL handling in your Flutter applications. It provides an easy-to-use interface for navigating between screens, launching URLs, and handling various system intents like making phone calls or sending emails.
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
+1. [Features](#features)
 2. [Installation](#installation)
 3. [Usage](#usage)
-   - [Basic Setup](#basic-setup)
-   - [Defining Routes](#defining-routes)
-   - [Navigating Between Pages](#navigating-between-pages)
-4. [RoutePilotPage](#routepilotpage)
-5. [Custom Transitions](#custom-transitions)
-6. [Argument Handling](#argument-handling)
-7. [Examples](#examples)
-   - [Basic Navigation Example](#basic-navigation-example)
-   - [Passing Arguments Example](#passing-arguments-example)
-   - [Retrieving Arguments Example](#retrieving-arguments-example)
-8. [Contributing](#contributing)
-9. [License](#license)
-10. [About the Author](#about-the-author)
+   - [Setup](#setup)
+   - [Navigation](#navigation)
+   - [Passing Arguments](#passing-arguments)
+   - [URL Launching](#url-launching)
+   - [System Intents](#system-intents)
+4. [API Reference](#api-reference)
+   - [RoutePilot Class](#routepilot-class)
+   - [PilotPage Class](#pilotpage-class)
+   - [Transition Enum](#transition-enum)
+5. [Configuration](#configuration)
+   - [iOS Configuration](#ios-configuration)
+   - [Android Configuration](#android-configuration)
+6. [Example](#example)
+7. [License](#license)
 
-## Introduction
+## Features
 
-**RoutePilot** is a Flutter package that offers a complete routing solution, enabling you to manage your navigation effortlessly. With support for custom transitions, argument handling, and a flexible API, it helps you build sophisticated navigation flows with ease.
+- Simple and intuitive navigation API
+- Custom page transitions
+- URL launching (browser, in-app browser, WebView)
+- Phone call initiation
+- SMS sending
+- Email composition
+- Argument passing between routes
 
 ## Installation
 
-To install RoutePilot, add the following dependency to your `pubspec.yaml`:
+Add `route_pilot` to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  route_pilot: ^1.0.0
+  route_pilot: ^0.0.3
+```
+
+Then run:
+
+```
+flutter pub get
 ```
 
 ## Usage
 
-#### Basic Setup
+### Setup
 
-Start by initializing the `RoutePilot` instance in your `main.dart` file:
+To use RoutePilot, set up your `MaterialApp` with the `navigatorKey` and `onGenerateRoute`:
 
 ```dart
+import 'package:flutter/material.dart';
+import 'package:route_pilot/route_pilot.dart';
+import 'package:your_app/routes/pilot_pages.dart';
+import 'package:your_app/routes/pilot_routes.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Navigation Service Example',
+      title: 'RoutePilot Demo',
       navigatorKey: routePilot.navigatorKey,
       onGenerateRoute: (settings) {
-        final page = AppPages.onGenerateRoute(settings);
+        final page = PilotPages.onGenerateRoute(settings);
         return page.createRoute(context);
       },
-      initialRoute: PilotRoutes.home,
+      initialRoute: PilotRoutes.Home,
     );
   }
 }
-
 ```
 
-### Defining Routes
-
-To organize your routes and make navigation more manageable, define all route names in an abstract class called `PilotRoutes`. This allows you to reference route names throughout your application with ease and consistency.
+Define your routes:
 
 ```dart
 abstract class PilotRoutes {
-  static const String home = '/home';
-  static const String second = '/second';
-  static const String third = '/third';
+  static const String Home = '/';
+  static const String ScreenOne = '/screen_one';
+  static const String ScreenTwo = '/screen_two';
+  static const String ScreenThree = '/screen_three';
+  static const String ScreenFour = '/screen_four';
 }
 ```
 
-### Managing Route Generation with `AppPages`
-
-The `AppPages` class centralizes the logic for generating routes in your Flutter application. By using the `onGenerateRoute` method, you can define how the app should respond to different navigation requests, including specifying the page to display and the transition to use.
-
-Here’s an example of how to implement the `AppPages` class:
+Set up your `PilotPages`:
 
 ```dart
-class AppPages {
-  static RoutePilotPage onGenerateRoute(RouteSettings settings) {
+import 'package:flutter/material.dart';
+import 'package:route_pilot/route_pilot.dart';
+import 'package:your_app/screens/home_screen.dart';
+import 'package:your_app/screens/screen_one.dart';
+// Import other screens...
+
+class PilotPages {
+  static PilotPage onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case PilotRoutes.Home:
-        return RoutePilotPage(
+        return PilotPage(
           name: PilotRoutes.Home,
           page: (context) => HomeScreen(),
           transition: Transition.ios,
         );
-      case PilotRoutes.Second:
-        return RoutePilotPage(
-          name: PilotRoutes.Second,
-          page: (context) => SecondPage(),
+      case PilotRoutes.ScreenOne:
+        return PilotPage(
+          name: PilotRoutes.ScreenOne,
+          page: (context) => ScreenOne(),
           transition: Transition.ios,
         );
-      case PilotRoutes.Third:
-        return RoutePilotPage(
-          name: PilotRoutes.Third,
-          page: (context) => ThirdPage(),
-          transition: Transition.scale,
-        );
+      // Define other routes...
       default:
-        return RoutePilotPage(
-          name: 'notFound',
-          page: (context) => NotFoundScreen(),
+        return PilotPage(
+          name: 'error',
+          page: (context) => ErrorPage(),
         );
     }
   }
 }
 ```
 
-#### Navigating Between Pages
+### Navigation
 
-Use `RoutePilot` to navigate between pages:
+Navigate between screens:
 
 ```dart
-routePilot.to(SecondPage(), arguments: {'id': 1, 'name': 'John Doe'});
+// Navigate to a named route
+routePilot.toNamed('/screen_one');
 
-routePilot.toNamed('/third');
+// Navigate back
+routePilot.back();
 
+// Replace the current route
+routePilot.off('/screen_two');
+
+// Remove all existing routes and navigate
 routePilot.offAll('/home');
 ```
 
-## RoutePilotPage
-
-#### Configuring RoutePilotPage: Key Parameters and Transition Effects
-
-When creating a new `RoutePilotPage`, several parameters allow you to customize the behavior and appearance of the page transition. Below are the key parameters:
-
-- **`PilotPageBuilder page`**:
-
-  - The widget builder for the page. This is a required parameter and defines the content of the page to be displayed.
-
-- **`String name`**:
-
-  - The name of the route. This is a required parameter and is used to identify the route in the navigation stack.
-
-- **`bool fullscreenDialog`**:
-
-  - Whether the page should be shown as a full-screen dialog. This is an optional parameter, with a default value of `false`.
-
-- **`Duration? transitionDuration`**:
-
-  - The custom transition duration for the page. This is an optional parameter and can be used to override the default transition duration.
-
-- **`Transition? transition`**:
-
-  - The type of transition animation to use when navigating to this page. This is an optional parameter, allowing for a variety of predefined transitions such as `fadeIn`, `scale`, `ios`, etc.
-
-- **`bool maintainState`**:
-
-  - Whether to maintain the page's state when it is covered by another page. This is an optional parameter, with a default value of `true`.
-
-- **`bool opaque`**:
-  - Whether the page is opaque. This is an optional parameter, with a default value of `true`. When `false`, the page allows underlying content to be visible through it.
-
-### Custom Transitions
-
-`RoutePilot` supports a variety of custom transitions that can be applied when navigating between pages. These transitions control how the new page appears on the screen, providing a smooth and visually appealing experience.
-
-Below are the available transitions:
-
-- **`Transition.fadeIn`**:
-  - The new page fades in from a completely transparent state to fully opaque.
-- **`Transition.rightToLeft`**:
-
-  - The new page slides in from the right side of the screen to the left, pushing the old page out of view.
-
-- **`Transition.leftToRight`**:
-
-  - The new page slides in from the left side of the screen to the right, pushing the old page out of view.
-
-- **`Transition.topToBottom`**:
-
-  - The new page slides down from the top of the screen, covering the old page.
-
-- **`Transition.bottomToTop`**:
-
-  - The new page slides up from the bottom of the screen, covering the old page.
-
-- **`Transition.scale`**:
-
-  - The new page scales up from a smaller size to its full size, creating a zoom-in effect.
-
-- **`Transition.rotate`**:
-
-  - The new page rotates into view, providing a spin or twist effect as it appears.
-
-- **`Transition.size`**:
-
-  - The new page grows or shrinks in size, transitioning smoothly to its final dimensions.
-
-- **`Transition.ios`**:
-  - A Cupertino-style transition, which slides the new page in from the right with a smooth, native iOS animation. This transition is commonly used on iOS devices.
-
-#### Example Usage
-
-When defining a route in `AppPages`, you can specify a transition like this:
-
-```dart
-RoutePilotPage(
-  name: PilotRoutes.Home,
-  page: (context) => HomeScreen(),
-  transition: Transition.fadeIn,  // Applying the fadeIn transition
-);
-```
-
-## Argument Handling
-
-`RoutePilot` provides straightforward methods for passing and retrieving arguments between routes, enhancing the flexibility and functionality of your navigation flows. This feature allows you to easily pass data to pages and retrieve it when needed.
-
 ### Passing Arguments
 
-To pass arguments to a route, use the `toNamed` method. You can include a map of key-value pairs as the `arguments` parameter:
+Pass arguments when navigating:
 
 ```dart
-// Passing arguments
-routePilot.toNamed('/second', arguments: {'id': 1, 'name': 'John Doe'});
+routePilot.toNamed('/screen_three', arguments: {'name': 'John Doe', 'age': 25});
 ```
 
-### Retrieving Arguments
-
-When you need to access arguments on the target page, `RoutePilot` provides convenient methods to retrieve them. You can access all arguments at once or fetch specific values using their keys.
-
-#### Retrieving All Arguments
-
-To get all arguments passed to the current route, use the `routePilot.args` property. It returns a list of maps containing the arguments:
+Retrieve arguments in the destination screen:
 
 ```dart
-// Retrieving all arguments
-final args = routePilot.args;
+final name = routePilot.arg<String>('name');
+final age = routePilot.arg<int>('age');
 ```
 
-### Retrieving a Specific Argument
+### URL Launching
 
-To retrieve a specific argument passed to a route, use the `routePilot.arg<T>(key)` method. In this method:
-
-- `T` is the type you expect the argument to be.
-- `key` is the name of the argument you want to retrieve.
-
-#### Example
+Launch URLs using RoutePilot:
 
 ```dart
-// Retrieving a specific argument
-final id = routePilot.arg<int>('id');
+// Launch in default browser
+routePilot.launchInBrowser(Uri.parse('https://flutter.dev'));
+
+// Launch in in-app browser
+routePilot.launchInAppBrowser(Uri.parse('https://dart.dev'));
+
+// Launch in WebView
+routePilot.launchInAppWebView(Uri.parse('https://pub.dev'));
 ```
 
-- In this example, `routePilot.arg<int>('id') `retrieves the argument associated with the key `'id'` and casts it to an `int`. Ensure that the key used matches the key used when passing the argument.
+### System Intents
 
-## Examples
-
-### Basic Navigation Example
-
-To navigate to a different page, you can use the `routePilot.toNamed` method. This method allows you to navigate to a route specified by its name.
-
-#### Example
+Trigger system intents:
 
 ```dart
-ElevatedButton(
-  onPressed: () {
-    routePilot.toNamed(PilotRoutes.second);
-  },
-  child: Text('Go to Second Page'),
+// Make a phone call
+routePilot.makePhoneCall('123-456-7890');
+
+// Send an SMS
+routePilot.sendSms('123-456-7890', body: 'Hello from Flutter!');
+
+// Send an email
+routePilot.sendEmail(
+  'example@example.com',
+  subject: 'Test Email',
+  body: 'This is a test email sent from a Flutter app.',
 );
 ```
 
-- In this example, pressing the `ElevatedButton` triggers navigation to the route named `PilotRoutes.Second`, which corresponds to the Second Page. This approach simplifies navigation by using route names defined in your `PilotRoutes` class.
+## API Reference
 
-#### Passing Arguments Example:
+### RoutePilot Class
 
-```dart
-routePilot.to(SecondPage(), arguments: {'id': 1, 'name': 'John Doe'});
+The main class for navigation and URL handling.
+
+Methods:
+
+- `to(Widget page, {dynamic arguments})`
+- `toNamed(String routeName, {dynamic arguments})`
+- `back()`
+- `offAll(String routeName, {dynamic arguments})`
+- `off(String routeName, {dynamic arguments})`
+- `launchInBrowser(Uri url)`
+- `launchInAppBrowser(Uri url)`
+- `launchInAppWebView(Uri url)`
+- `launchInAppWithCustomHeaders(Uri url, Map<String, String> headers)`
+- `launchInAppWithoutJavaScript(Uri url)`
+- `launchInAppWithoutDomStorage(Uri url)`
+- `launchUniversalLinkIOS(Uri url)`
+- `makePhoneCall(String phoneNumber)`
+- `sendSms(String phoneNumber, {String? body})`
+- `sendEmail(String email, {String? subject, String? body})`
+- `canLaunchUrl(Uri url)`
+
+### PilotPage Class
+
+A custom implementation of the Page class for more control over transitions.
+
+Properties:
+
+- `page`: The function that builds the content of the page.
+- `name`: The name of the route.
+- `fullscreenDialog`: Whether the route is a full-screen dialog.
+- `transitionDuration`: The duration of the transition animation.
+- `transition`: The type of transition animation to use.
+- `maintainState`: Whether to maintain the state of the route when it's inactive.
+- `opaque`: Whether the route is opaque.
+- `parameters`: Optional parameters to pass to the route.
+- `arguments`: Optional arguments to pass to the route.
+
+### Transition Enum
+
+Defines the types of transitions available:
+
+- `fadeIn`
+- `rightToLeft`
+- `leftToRight`
+- `topToBottom`
+- `bottomToTop`
+- `scale`
+- `rotate`
+- `size`
+- `ios`
+
+## Configuration
+
+### iOS Configuration
+
+Add any URL schemes passed to `canLaunchUrl` as `LSApplicationQueriesSchemes` entries in your `Info.plist` file:
+
+```xml
+<key>LSApplicationQueriesSchemes</key>
+<array>
+  <string>sms</string>
+  <string>tel</string>
+</array>
 ```
 
-#### Retrieving Arguments Example:
+### Android Configuration
+
+Add any URL schemes passed to `canLaunchUrl` as `<queries>` entries in your `AndroidManifest.xml`:
+
+```xml
+<queries>
+  <!-- If your app checks for SMS support -->
+  <intent>
+    <action android:name="android.intent.action.VIEW" />
+    <data android:scheme="sms" />
+  </intent>
+  <!-- If your app checks for call support -->
+  <intent>
+    <action android:name="android.intent.action.VIEW" />
+    <data android:scheme="tel" />
+  </intent>
+  <!-- If your application checks for inAppBrowserView launch mode support -->
+  <intent>
+    <action android:name="android.support.customtabs.action.CustomTabsService" />
+  </intent>
+</queries>
+```
+
+## Example
+
+Here's a simple example of how to use RoutePilot in a Flutter app:
 
 ```dart
+import 'package:flutter/material.dart';
+import 'package:route_pilot/route_pilot.dart';
 
-final args = routePilot.args;
-final id = routePilot.arg<int>('id');
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      navigatorKey: routePilot.navigatorKey,
+      onGenerateRoute: (settings) {
+        final page = PilotPages.onGenerateRoute(settings);
+        return page.createRoute(context);
+      },
+      home: HomeScreen(),
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('RoutePilot Example')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              child: Text('Go to ScreenOne'),
+              onPressed: () => routePilot.toNamed('/screen_one'),
+            ),
+            ElevatedButton(
+              child: Text('Launch URL in Browser'),
+              onPressed: () => routePilot.launchInBrowser(Uri.parse('https://flutter.dev')),
+            ),
+            ElevatedButton(
+              child: Text('Make Phone Call'),
+              onPressed: () => routePilot.makePhoneCall('123-456-7890'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class PilotPages {
+  static PilotPage onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case '/':
+        return PilotPage(
+          name: '/',
+          page: (context) => HomeScreen(),
+        );
+      case '/screen_one':
+        return PilotPage(
+          name: '/screen_one',
+          page: (context) => ScreenOne(),
+          transition: Transition.fadeIn,
+        );
+      default:
+        return PilotPage(
+          name: 'error',
+          page: (context) => Scaffold(body: Center(child: Text('Page not found'))),
+        );
+    }
+  }
+}
+
+class ScreenOne extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Screen One')),
+      body: Center(
+        child: Text('This is Screen One'),
+      ),
+    );
+  }
+}
 ```
 
 ## License
