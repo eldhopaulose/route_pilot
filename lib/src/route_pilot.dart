@@ -152,6 +152,20 @@ class RoutePilot {
     navigatorKey.currentState!.pop<T>(result);
   }
 
+  /// Pops routes continuously until the predicate returns true.
+  ///
+  /// [predicate]: A function that returns true when the desired route is reached.
+  void backUntilPredicate(RoutePredicate predicate) {
+    navigatorKey.currentState!.popUntil(predicate);
+  }
+
+  /// Pops routes continuously until the specified route name is found.
+  ///
+  /// [routeName]: The name of the route to stop popping at (e.g., '/home').
+  void backUntil(String routeName) {
+    navigatorKey.currentState!.popUntil(ModalRoute.withName(routeName));
+  }
+
   /// Removes all existing routes and navigates to a new named route
   ///
   /// [routeName]: The name of the route to navigate to

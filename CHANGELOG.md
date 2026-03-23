@@ -6,6 +6,8 @@
 - **Major Feature**: Route Observer (`routePilot.observer`) and navigation history.
 - Generic return types for `to()`, `toNamed()`, and `back()`.
 - Added support for dynamic custom `Curve` and `Transition` inside `to()`.
+- **Major Feature**: Added `routePilot.backUntil()` and `routePilot.backUntilPredicate()` for deep navigation stack popping.
+- **Enhancement**: Core argument parser natively supports passing and casting pure custom Dart objects (`routePilot.getArguments<T>()`).
 
 ## 0.0.1
 
