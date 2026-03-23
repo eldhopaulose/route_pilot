@@ -12,51 +12,80 @@ class PersonData {
 }
 
 // ----------------------------------------------------
-// 1. Defining a Middleware Guard
+// 1. Defining an Async Middleware Guard
 // ----------------------------------------------------
 bool isAuthenticated = false; // Mock Authentication State
 
-class AuthGuard extends PilotMiddleware {
+class AsyncAuthGuard extends PilotMiddleware {
   @override
-  String? redirect(String? route) {
-    if (!isAuthenticated) return '/login'; // Redirect if not authenticated
+  Future<String?> redirect(String? route) async {
+    if (!isAuthenticated) {
+      // Simulate fake network request for token check
+      await Future.delayed(const Duration(milliseconds: 1000));
+      return '/login'; // Redirect if not authenticated
+    }
     return null; // Proceed normal routing
   }
 }
+
+// ----------------------------------------------------
+// 2. Strongly Typed Route Definition
+// ----------------------------------------------------
+final paramRoute = PilotRoute<void, void>('/param/:id');
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: routePilot.navigatorKey,
-      navigatorObservers: [routePilot.observer],
-      onGenerateRoute: (settings) => routePilot.onGenerateRoute(
-        settings,
+    return MaterialApp.router(
+      // Use RoutePilot's new Router API configuration for Web URL sync & Deep Linking
+      routerConfig: routePilot.getRouterConfig(
+        notFoundPage: PilotPage(
+          name: '/404',
+          page: (context) => const NotFoundPage(),
+        ),
         pages: [
           PilotPage(name: '/', page: (context) => const HomePage()),
+          
           PilotPage(
-              name: '/second',
-              page: (context) => SecondPage(
-                    name: routePilot.arg<String>('name') ?? 'Guest',
-                    age: routePilot.arg<int>('age') ?? 0,
-                    personData: routePilot.getArguments<PersonData>() ??
-                        routePilot.arg<PersonData>('personData') ??
-                        PersonData(id: -1, title: 'No Data'),
-                  ),
-              transition: Transition.scale),
-          PilotPage(name: '/param/:id', page: (context) => const ParamPage()),
-          PilotPage(name: '/third', page: (context) => const ThirdPage()),
-          PilotPage(
-            name: '/protected',
-            page: (context) => const ProtectedPage(),
-            middlewares: [AuthGuard()],
+            name: '/second',
+            page: (context) => SecondPage(
+              name: routePilot.arg<String>('name') ?? 'Guest',
+              age: routePilot.arg<int>('age') ?? 0,
+              personData: routePilot.getArguments<PersonData>() ??
+                  routePilot.arg<PersonData>('personData') ??
+                  PersonData(id: -1, title: 'No Data'),
+            ),
+            transition: Transition.scale,
           ),
+          
+          PilotPage(
+            name: '/param/:id',
+            page: (context) => const ParamPage(),
+          ),
+          
+          PilotPage(
+            name: '/third', 
+            page: (context) => const ThirdPage(),
+          ),
+
+          // ----------------------------------------------------
+          // 3. Using Route Groups
+          // ----------------------------------------------------
+          PilotRouteGroup(
+            prefix: '/dashboard',
+            middlewares: [AsyncAuthGuard()], // Secure all routes in dashboard
+            transition: Transition.fadeIn,
+            children: [
+              PilotPage(name: '/home', page: (context) => const ProtectedPage()),
+              PilotPage(name: '/settings', page: (context) => const Scaffold(body: Center(child: Text('Settings')))),
+            ],
+          ),
+
           PilotPage(name: '/login', page: (context) => const LoginPage()),
         ],
       ),
-      initialRoute: '/',
     );
   }
 }
@@ -67,7 +96,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RoutePilot Advanced Example')),
+      appBar: AppBar(title: const Text('RoutePilot v2.0 Example')),
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -91,68 +120,76 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                child: const Text(
-                    'Go to Second Page (Named w/ Raw Object Argument)'),
-                onPressed: () => routePilot.toNamed('/second',
-                    arguments:
-                        PersonData(id: 103, title: 'Direct Object Passed')),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
                 child: const Text('Go to Params Page (/param/42?query=hello)'),
-                onPressed: () => routePilot.toNamed('/param/42?query=hello'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                child: const Text('Show Dialog'),
-                onPressed: () => routePilot.dialog(
-                  AlertDialog(
-                    title: const Text('Hello RoutePilot'),
-                    actions: [
-                      TextButton(
-                          onPressed: () => routePilot.back(),
-                          child: const Text('Close'))
-                    ],
-                  ),
+                // Using Strongly typed PilotRoute wrapper!
+                onPressed: () => paramRoute.push(
+                  pathParams: {'id': '42'},
+                  queryParams: {'query': 'hello'},
                 ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                child: const Text('Show Bottom Sheet'),
-                onPressed: () => routePilot.bottomSheet(
-                  Container(
-                    height: 200,
-                    color: Colors.white,
-                    child: Center(
-                      child: ElevatedButton(
-                        child: const Text('Close Bottom Sheet'),
-                        onPressed: () => routePilot.back(),
-                      ),
-                    ),
-                  ),
-                ),
+                child: const Text('Show Global Loading Overlay (Closes after 2s)'),
+                onPressed: () async {
+                  routePilot.showLoading();
+                  await Future.delayed(const Duration(seconds: 2));
+                  routePilot.hideLoading();
+                },
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                child: const Text('Show SnackBar'),
-                onPressed: () =>
-                    routePilot.snackBar('This is a Snackbar without context!'),
+                child: const Text('Show Queue-Safe SnackBar'),
+                onPressed: () => routePilot.snackBar('This overwrites previous Snackbars immediately!'),
               ),
               const SizedBox(height: 30),
               const Divider(),
-              const Text('Middleware Showcase:',
+              const Text('Middleware & Route Group Showcase:',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               const SizedBox(height: 10),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueGrey,
                     foregroundColor: Colors.white),
-                child: const Text('Go to Protected Page (Triggers AuthGuard)'),
-                onPressed: () => routePilot.toNamed('/protected'),
+                child: const Text('Go to Dashboard (Async Auth Guard)'),
+                onPressed: () => routePilot.toNamed('/dashboard/home'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white),
+                child: const Text('Go to Unknown Route (Triggers 404 Fallback)'),
+                onPressed: () => routePilot.toNamed('/random-broken-path'),
               ),
               const SizedBox(height: 30),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class NotFoundPage extends StatelessWidget {
+  const NotFoundPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('404 Not Found')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.broken_image, size: 80, color: Colors.grey),
+            const SizedBox(height: 20),
+            const Text('Oops! That page does not exist.', style: TextStyle(fontSize: 18)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => routePilot.offAll('/'),
+              child: const Text('Return Home'),
+            ),
+          ],
         ),
       ),
     );
@@ -307,7 +344,7 @@ class LoginPage extends StatelessWidget {
             const Text('AuthGuard blocked access!',
                 style: TextStyle(fontSize: 22, color: Colors.redAccent)),
             const SizedBox(height: 10),
-            const Text('You were redirected to Login.'),
+            const Text('You were redirected to Login after an Async Check.'),
             const SizedBox(height: 40),
             ElevatedButton(
               child: const Text('Mock Login & Return Home'),

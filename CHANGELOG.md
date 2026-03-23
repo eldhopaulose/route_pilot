@@ -1,13 +1,16 @@
 ## 0.1.0
-- **Major Feature**: Added `routePilot.onGenerateRoute` engine for Arrays-based routing!
-- **Major Feature**: Dynamic Path Parameters (`/user/:id`).
-- **Major Feature**: Route Middleware (`PilotMiddleware`) for intercept guards.
-- **Major Feature**: Overlays APIs (`routePilot.dialog`, `bottomSheet`, `snackBar`).
-- **Major Feature**: Route Observer (`routePilot.observer`) and navigation history.
-- Generic return types for `to()`, `toNamed()`, and `back()`.
-- Added support for dynamic custom `Curve` and `Transition` inside `to()`.
-- **Major Feature**: Added `routePilot.backUntil()` and `routePilot.backUntilPredicate()` for deep navigation stack popping.
-- **Enhancement**: Core argument parser natively supports passing and casting pure custom Dart objects (`routePilot.getArguments<T>()`).
+### Added
+- **Async Middleware**: `redirect()` now returns `FutureOr<String?>`. Optional global `middlewareLoadingWidget` added.
+- **Navigator 2.0 Web URL Sync**: `RoutePilot.getRouterConfig()` introduced for advanced Deep Linking and Browser URL Sync out of the box.
+- **Typed Routes**: `PilotRoute<TArgs, TReturn>` class added for strongly-typed routing and execution.
+- **Route Groups**: Added `PilotRouteGroup` for shared middleware, transition behavior, and path prefixes.
+- **Unknown Route Fallback**: `notFoundPage` argument added to engine configuration.
+- **Overlay APIs**: Added `showLoading()` and `hideLoading()`.
+
+### Changed
+- `snackBar()` now uses `clearSnackBars()` to be immediately queue-safe.
+- Minor performance refactors to nested routes.
+
 
 ## 0.0.1
 

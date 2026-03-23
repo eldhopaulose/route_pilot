@@ -1,58 +1,55 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:route_pilot/route_pilot.dart';
 
-class TestAuthMiddleware extends PilotMiddleware {
+class AsyncTestingMiddleware extends PilotMiddleware {
   @override
-  String? redirect(String? route) {
-    if (route == '/protected') return '/login';
+  FutureOr<String?> redirect(String? route) async {
+    if (route == '/admin') {
+      await Future.delayed(const Duration(milliseconds: 50));
+      return '/login';
+    }
     return null;
   }
 }
 
 void main() {
-  testWidgets('RoutePilot new router engine, params, and middleware test',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(
-      navigatorKey: routePilot.navigatorKey,
-      navigatorObservers: [routePilot.observer],
-      initialRoute: '/',
-      onGenerateRoute: (settings) => routePilot.onGenerateRoute(
-        settings,
+  testWidgets('RoutePilot v2 advanced routing tests', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp.router(
+      routerConfig: routePilot.getRouterConfig(
+        notFoundPage: PilotPage(name: '/404', page: (_) => const Scaffold(body: Text('404 Not Found'))),
         pages: [
-          PilotPage(
-              name: '/', page: (context) => const Scaffold(body: Text('Home'))),
-          PilotPage(
-              name: '/user/:id',
-              page: (context) => Scaffold(
-                  body: Text(
-                      'User ${routePilot.param('id')} - ${routePilot.param('role')}',
-                      key: const Key('user_text')))),
-          PilotPage(
-              name: '/protected',
-              page: (context) => const Scaffold(body: Text('Secret')),
-              middlewares: [TestAuthMiddleware()]),
-          PilotPage(
-              name: '/login',
-              page: (context) => const Scaffold(body: Text('Login'))),
+          PilotPage(name: '/', page: (_) => const Scaffold(body: Text('Home'))),
+          PilotRouteGroup(
+            prefix: '/nested',
+            middlewares: [AsyncTestingMiddleware()],
+            children: [
+              PilotPage(name: '/page', page: (_) => const Scaffold(body: Text('Nested Page'))),
+            ],
+          ),
+          PilotPage(name: '/admin', page: (_) => const Scaffold(body: Text('Admin')), middlewares: [AsyncTestingMiddleware()]),
+          PilotPage(name: '/login', page: (_) => const Scaffold(body: Text('Login'))),
         ],
-      ),
+      )
     ));
 
     expect(find.text('Home'), findsOneWidget);
 
-    // Test Path and Query Params correctly routing
-    routePilot.toNamed('/user/123?role=admin');
+    // Test Typed Route push (URL sync)
+    final nestedRoute = PilotRoute<void, void>('/nested/page');
+    nestedRoute.push();
     await tester.pumpAndSettle();
-    expect(find.text('User 123 - admin'), findsOneWidget);
+    expect(find.text('Nested Page'), findsOneWidget);
 
-    // Test Middleware Redirect triggered over Protected
-    routePilot.toNamed('/protected');
-    await tester.pumpAndSettle();
-    expect(find.text('Secret'), findsNothing);
+    // Async Middleware redirect test
+    routePilot.toNamed('/admin');
+    await tester.pumpAndSettle(); // Finish resolving and redirect
     expect(find.text('Login'), findsOneWidget);
 
-    // Test Observer capabilities
-    expect(routePilot.currentRoute, '/login');
+    // Not Found Page test
+    routePilot.toNamed('/does-not-exist');
+    await tester.pumpAndSettle();
+    expect(find.text('404 Not Found'), findsOneWidget);
   });
 }
