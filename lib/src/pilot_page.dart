@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'pilot_middleware.dart';
 
 /// A typedef for a function that builds a widget given a BuildContext.
 /// This is used to create the content of a PilotPage.
@@ -18,6 +19,12 @@ class PilotPage<T> extends Page<T> {
 
   /// The type of transition animation to use.
   final Transition? transition;
+
+  /// The curve of the transition animation.
+  final Curve curve;
+
+  /// A list of middlewares to run before building this page.
+  final List<PilotMiddleware>? middlewares;
 
   /// Whether to maintain the state of the route when it's inactive.
   final bool maintainState;
@@ -45,17 +52,20 @@ class PilotPage<T> extends Page<T> {
     this.fullscreenDialog = false,
     this.transitionDuration,
     this.transition,
+    this.curve = Curves.linear,
     this.maintainState = true,
     this.opaque = true,
     this.parameters,
+    this.middlewares,
     super.arguments,
   }) : super(
           key: ValueKey(name),
           name: name,
         );
 
-  @override
-  Route<T> createRoute(BuildContext context) {
+  /// Safely converts the PilotPage configuration into a Flutter Route
+  /// without requiring a BuildContext (which might be null during app startup).
+  Route<T> toRoute() {
     // If the transition is set to iOS, use CupertinoPageRoute
     if (transition == Transition.ios) {
       return CupertinoPageRoute<T>(
@@ -73,16 +83,19 @@ class PilotPage<T> extends Page<T> {
       transitionDuration:
           transitionDuration ?? const Duration(milliseconds: 300),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation =
+            CurvedAnimation(parent: animation, curve: curve);
+
         // Apply the specified transition effect
         switch (transition) {
           case Transition.fadeIn:
-            return FadeTransition(opacity: animation, child: child);
+            return FadeTransition(opacity: curvedAnimation, child: child);
           case Transition.rightToLeft:
             return SlideTransition(
               position: Tween<Offset>(
                 begin: const Offset(1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(curvedAnimation),
               child: child,
             );
           case Transition.leftToRight:
@@ -90,7 +103,7 @@ class PilotPage<T> extends Page<T> {
               position: Tween<Offset>(
                 begin: const Offset(-1, 0),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(curvedAnimation),
               child: child,
             );
           case Transition.topToBottom:
@@ -98,7 +111,7 @@ class PilotPage<T> extends Page<T> {
               position: Tween<Offset>(
                 begin: const Offset(0, -1),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(curvedAnimation),
               child: child,
             );
           case Transition.bottomToTop:
@@ -106,22 +119,22 @@ class PilotPage<T> extends Page<T> {
               position: Tween<Offset>(
                 begin: const Offset(0, 1),
                 end: Offset.zero,
-              ).animate(animation),
+              ).animate(curvedAnimation),
               child: child,
             );
           case Transition.scale:
             return ScaleTransition(
-              scale: animation,
+              scale: curvedAnimation,
               child: child,
             );
           case Transition.rotate:
             return RotationTransition(
-              turns: animation,
+              turns: curvedAnimation,
               child: child,
             );
           case Transition.size:
             return SizeTransition(
-              sizeFactor: animation,
+              sizeFactor: curvedAnimation,
               child: child,
             );
           case Transition.ios:
@@ -136,6 +149,9 @@ class PilotPage<T> extends Page<T> {
       opaque: opaque,
     );
   }
+
+  @override
+  Route<T> createRoute(BuildContext context) => toRoute();
 }
 
 /// Enum defining the types of transitions available for PilotPage.

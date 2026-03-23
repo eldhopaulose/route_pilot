@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'pilot_page.dart';
+import 'pilot_observer.dart';
 
 /// RoutePilot is a singleton class that provides navigation and URL launching functionalities.
 /// It encapsulates Flutter's navigation methods and url_launcher package functionality.
@@ -16,6 +18,89 @@ class RoutePilot {
   /// Global navigator key for accessing navigator state
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+  /// The RouteObserver tracking navigation for RoutePilot
+  final PilotObserver observer = PilotObserver();
+
+  /// Gets the current route name from the observer stack
+  String? get currentRoute => observer.routeStack.isNotEmpty
+      ? observer.routeStack.last.settings.name
+      : null;
+
+  /// Gets the previous route name from the observer stack
+  String? get previousRoute => observer.routeStack.length > 1
+      ? observer.routeStack[observer.routeStack.length - 2].settings.name
+      : null;
+
+  /// Private map storing parsed path and query parameters
+  Map<String, String> _parameters = {};
+
+  /// Retrieves a parsed path or query parameter securely
+  String? param(String key) => _parameters[key];
+
+  /// Internal engine for generating routes dynamically.
+  /// Handles matching paths, parsing path/query parameters, and running middlewares.
+  Route<dynamic>? onGenerateRoute(RouteSettings settings,
+      {required List<PilotPage> pages}) {
+    if (settings.name == null) return null;
+
+    final uri = Uri.parse(settings.name!);
+    _parameters = {...uri.queryParameters};
+
+    PilotPage? matchedPage;
+
+    // Attempt matching
+    for (final page in pages) {
+      if (page.name == uri.path) {
+        matchedPage = page;
+        break;
+      }
+
+      if (page.name == null) continue;
+      final routeSegments = page.name!.split('/');
+      final pathSegments = uri.path.split('/');
+
+      if (routeSegments.length == pathSegments.length) {
+        bool match = true;
+        Map<String, String> pathParams = {};
+        for (int i = 0; i < routeSegments.length; i++) {
+          if (routeSegments[i].startsWith(':')) {
+            pathParams[routeSegments[i].substring(1)] = pathSegments[i];
+          } else if (routeSegments[i] != pathSegments[i]) {
+            match = false;
+            break;
+          }
+        }
+        if (match) {
+          _parameters.addAll(pathParams);
+          matchedPage = page;
+          break;
+        }
+      }
+    }
+
+    if (matchedPage == null) return null;
+
+    // Run custom middlewares
+    if (matchedPage.middlewares != null) {
+      for (final middleware in matchedPage.middlewares!) {
+        final redirectRoute = middleware.redirect(settings.name);
+        if (redirectRoute != null) {
+          // Redirect triggers the system recursively
+          return onGenerateRoute(
+            RouteSettings(name: redirectRoute, arguments: settings.arguments),
+            pages: pages,
+          );
+        }
+      }
+    }
+
+    if (settings.arguments != null) {
+      _setArguments(settings.arguments);
+    }
+
+    return matchedPage.toRoute();
+  }
+
   /// Private variable to store navigation arguments
   dynamic _arguments;
 
@@ -24,10 +109,31 @@ class RoutePilot {
   /// [page]: The widget to navigate to
   /// [arguments]: Optional arguments to pass to the new route
   /// Returns a Future that completes with the result of the push
-  Future<dynamic> to(Widget page, {dynamic arguments}) {
+  Future<T?> to<T>(
+    Widget page, {
+    dynamic arguments,
+    Transition? transition,
+    Duration? transitionDuration,
+    Curve? curve,
+  }) {
     _setArguments(arguments);
+
+    if (transition != null) {
+      final pilotPage = PilotPage<T>(
+        name: page.runtimeType.toString(),
+        page: (_) => page,
+        arguments: arguments,
+        transition: transition,
+        transitionDuration: transitionDuration,
+        curve: curve ?? Curves.linear,
+      );
+
+      return navigatorKey.currentState!
+          .push<T>(pilotPage.createRoute(navigatorKey.currentContext!));
+    }
+
     return navigatorKey.currentState!
-        .push(MaterialPageRoute(builder: (_) => page));
+        .push<T>(MaterialPageRoute(builder: (_) => page));
   }
 
   /// Navigates to a named route
@@ -35,15 +141,15 @@ class RoutePilot {
   /// [routeName]: The name of the route to navigate to
   /// [arguments]: Optional arguments to pass to the new route
   /// Returns a Future that completes with the result of the push
-  Future<dynamic> toNamed(String routeName, {dynamic arguments}) {
+  Future<T?> toNamed<T>(String routeName, {dynamic arguments}) {
     _setArguments(arguments);
-    return navigatorKey.currentState!.pushNamed(routeName);
+    return navigatorKey.currentState!.pushNamed<T>(routeName);
   }
 
   /// Navigates back to the previous route
-  void back() {
+  void back<T>([T? result]) {
     _arguments = null;
-    navigatorKey.currentState!.pop();
+    navigatorKey.currentState!.pop<T>(result);
   }
 
   /// Removes all existing routes and navigates to a new named route
@@ -51,10 +157,10 @@ class RoutePilot {
   /// [routeName]: The name of the route to navigate to
   /// [arguments]: Optional arguments to pass to the new route
   /// Returns a Future that completes with the result of the push
-  Future<dynamic> offAll(String routeName, {dynamic arguments}) {
+  Future<T?> offAll<T>(String routeName, {dynamic arguments}) {
     _setArguments(arguments);
     return navigatorKey.currentState!
-        .pushNamedAndRemoveUntil(routeName, (route) => false);
+        .pushNamedAndRemoveUntil<T>(routeName, (route) => false);
   }
 
   /// Replaces the current route with a new named route
@@ -62,9 +168,43 @@ class RoutePilot {
   /// [routeName]: The name of the route to navigate to
   /// [arguments]: Optional arguments to pass to the new route
   /// Returns a Future that completes with the result of the push
-  Future<dynamic> off(String routeName, {dynamic arguments}) {
+  Future<T?> off<T, TO>(String routeName, {dynamic arguments}) {
     _setArguments(arguments);
-    return navigatorKey.currentState!.pushReplacementNamed(routeName);
+    return navigatorKey.currentState!.pushReplacementNamed<T, TO>(routeName);
+  }
+
+  /// Displays a dialog above the current contents of the app.
+  Future<T?> dialog<T>(Widget dialogWidget, {bool barrierDismissible = true}) {
+    return showDialog<T>(
+      context: navigatorKey.currentContext!,
+      barrierDismissible: barrierDismissible,
+      builder: (_) => dialogWidget,
+    );
+  }
+
+  /// Shows a modal material design bottom sheet.
+  Future<T?> bottomSheet<T>(Widget bottomSheetWidget,
+      {bool isScrollControlled = false, bool isDismissible = true}) {
+    return showModalBottomSheet<T>(
+      context: navigatorKey.currentContext!,
+      isScrollControlled: isScrollControlled,
+      isDismissible: isDismissible,
+      builder: (_) => bottomSheetWidget,
+    );
+  }
+
+  /// Shows a SnackBar with the provided message.
+  void snackBar(String message,
+      {Duration duration = const Duration(seconds: 4),
+      Color? backgroundColor}) {
+    final context = navigatorKey.currentContext!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: duration,
+        backgroundColor: backgroundColor,
+      ),
+    );
   }
 
   /// Launches a URL in the device's default browser
@@ -209,48 +349,28 @@ class RoutePilot {
   /// Sets the navigation arguments
   ///
   /// [arguments]: The arguments to set
-  /// If arguments is a `Map<String, dynamic>`, it's wrapped in a List
-  /// If arguments is a `List<Map<String, dynamic>>`, it's set as is
-  /// Otherwise, arguments are set to null
   void _setArguments(dynamic arguments) {
-    if (arguments is Map<String, dynamic>) {
-      _arguments = [arguments];
-    } else if (arguments is List<Map<String, dynamic>>) {
-      _arguments = arguments;
-    } else {
-      _arguments = null;
-    }
+    _arguments = arguments;
   }
 
-  /// Gets the navigation arguments
+  /// Gets the raw navigation arguments
   ///
-  /// Returns a `List<Map<String, dynamic>>?` containing the arguments
-  List<Map<String, dynamic>>? get args {
-    return _arguments as List<Map<String, dynamic>>?;
-  }
+  /// Returns the raw object (e.g., Map, custom class, etc.) passed.
+  dynamic get args => _arguments;
 
-  /// Gets a specific argument by key
-  ///
-  /// [key]: The key of the argument to retrieve
-  /// [index]: The index of the argument map in the list (default: 0)
-  /// Returns the argument value of type T, or null if not found
-  T? arg<T>(String key, {int index = 0}) {
-    if (_arguments is List && _arguments.length > index) {
-      final map = _arguments[index];
-      if (map is Map<String, dynamic> && map.containsKey(key)) {
-        return map[key] as T?;
-      }
-    }
+  /// Tries to get the raw arguments casted to a specific type
+  T? getArguments<T>() {
+    if (_arguments is T) return _arguments as T;
     return null;
   }
 
-  /// Gets the argument map at a specific index
+  /// Gets a specific argument by key (assumes arguments is a Map)
   ///
-  /// [index]: The index of the argument map to retrieve
-  /// Returns the `Map<String, dynamic>?` at the specified index, or null if not found
-  Map<String, dynamic>? argsAt(int index) {
-    if (_arguments is List && _arguments.length > index) {
-      return _arguments[index] as Map<String, dynamic>?;
+  /// [key]: The key of the argument to retrieve
+  /// Returns the argument value of type T, or null if not found
+  T? arg<T>(String key) {
+    if (_arguments is Map && (_arguments as Map).containsKey(key)) {
+      return (_arguments as Map)[key] as T?;
     }
     return null;
   }

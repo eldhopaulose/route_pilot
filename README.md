@@ -44,7 +44,7 @@ Add `route_pilot` to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  route_pilot: ^0.0.3
+  route_pilot: ^0.1.0
 ```
 
 Then run:
