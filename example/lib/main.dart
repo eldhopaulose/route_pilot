@@ -163,6 +163,7 @@ class MyApp extends StatelessWidget {
       routerConfig: routePilot.getRouterConfig(
         notFoundPage: PilotPages.getNotFoundPage(),
         pages: PilotPages.pages,
+        initialRoute: PilotRoutes.Home,
       ),
     );
   }

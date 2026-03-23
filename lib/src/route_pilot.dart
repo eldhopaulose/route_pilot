@@ -44,10 +44,10 @@ class RoutePilot {
   /// Optional global loading widget to display while async middlewares are resolving.
   Widget? middlewareLoadingWidget;
 
-  /// Creates a configuration for MaterialApp.router to support deep linking and web URL sync.
   RouterConfig<Object> getRouterConfig({
     required List<dynamic> pages,
     PilotPage? notFoundPage,
+    String? initialRoute,
   }) {
     _routerDelegate = PilotRouterDelegate(
       navigatorKey: navigatorKey,
@@ -60,7 +60,7 @@ class RoutePilot {
       backButtonDispatcher: RootBackButtonDispatcher(),
       routeInformationProvider: PlatformRouteInformationProvider(
         initialRouteInformation: RouteInformation(
-          uri: Uri.parse(
+          uri: Uri.parse(initialRoute ??
               WidgetsBinding.instance.platformDispatcher.defaultRouteName),
         ),
       ),

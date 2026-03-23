@@ -128,6 +128,7 @@ class MyApp extends StatelessWidget {
           page: (context) => const NotFoundPage(),
         ),
         pages: PilotPages.pages,
+        initialRoute: PilotRoutes.Home, // Optionally specify initial route
       ),
     );
   }
@@ -668,7 +669,7 @@ Add queried URL schemes to `ios/Runner/Info.plist`:
 | `currentRoute`                                      | Current route name from the stack                      |
 | `previousRoute`                                     | Previous route name from the stack                     |
 | `middlewareLoadingWidget`                            | Widget shown while async middlewares resolve           |
-| `getRouterConfig({pages, notFoundPage})`            | Creates `RouterConfig` for `MaterialApp.router`        |
+| `getRouterConfig({pages, notFoundPage, initialRoute})`| Creates `RouterConfig` for `MaterialApp.router`        |
 | `onGenerateRoute(settings, {pages, notFoundPage})`  | Route generator for classic `MaterialApp`              |
 | `to(Widget, {arguments, transition, ...})`          | Push a widget directly                                 |
 | `toNamed(String, {arguments})`                      | Push a named route                                     |
