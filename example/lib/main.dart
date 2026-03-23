@@ -12,8 +12,19 @@ class PersonData {
 }
 
 // ----------------------------------------------------
-// 1. Defining an Async Middleware Guard
+// 1. Defining Routes and Pages Structure
 // ----------------------------------------------------
+
+abstract class PilotRoutes {
+  static const String Home = '/';
+  static const String Second = '/second';
+  static const String Param = '/param/:id';
+  static const String Third = '/third';
+  static const String DashboardHome = '/dashboard/home';
+  static const String DashboardSettings = '/dashboard/settings';
+  static const String Login = '/login';
+}
+
 bool isAuthenticated = false; // Mock Authentication State
 
 class AsyncAuthGuard extends PilotMiddleware {
@@ -22,16 +33,125 @@ class AsyncAuthGuard extends PilotMiddleware {
     if (!isAuthenticated) {
       // Simulate fake network request for token check
       await Future.delayed(const Duration(milliseconds: 1000));
-      return '/login'; // Redirect if not authenticated
+      return PilotRoutes.Login; // Redirect if not authenticated
     }
     return null; // Proceed normal routing
+  }
+}
+
+class PilotPages {
+  static final List<dynamic> pages = [
+    PilotPage(
+      name: PilotRoutes.Home,
+      page: (context) => const HomePage(),
+    ),
+    PilotPage(
+      name: PilotRoutes.Second,
+      page: (context) => SecondPage(
+        name: routePilot.arg<String>('name') ?? 'Guest',
+        age: routePilot.arg<int>('age') ?? 0,
+        personData: routePilot.getArguments<PersonData>() ??
+            routePilot.arg<PersonData>('personData') ??
+            PersonData(id: -1, title: 'No Data'),
+      ),
+      transition: Transition.scale,
+    ),
+    PilotPage(
+      name: PilotRoutes.Param,
+      page: (context) => const ParamPage(),
+    ),
+    PilotPage(
+      name: PilotRoutes.Third,
+      page: (context) => const ThirdPage(),
+    ),
+    PilotPage(
+      name: PilotRoutes.Login,
+      page: (context) => const LoginPage(),
+    ),
+    // ----------------------------------------------------
+    // Using Route Groups for the Dashboard Section
+    // ----------------------------------------------------
+    PilotRouteGroup(
+      prefix: '/dashboard',
+      middlewares: [AsyncAuthGuard()], // Secure all routes in dashboard
+      transition: Transition.fadeIn,
+      children: [
+        PilotPage(
+          name:
+              '/home', // Evaluates to PilotRoutes.DashboardHome -> /dashboard/home
+          page: (context) => const ProtectedPage(),
+        ),
+        PilotPage(
+          name:
+              '/settings', // Evaluates to PilotRoutes.DashboardSettings -> /dashboard/settings
+          page: (context) =>
+              const Scaffold(body: Center(child: Text('Settings'))),
+        ),
+      ],
+    ),
+  ];
+
+  /// For Navigator 1.0 (onGenerateRoute)
+  static PilotPage onGenerateRoute(RouteSettings settings) {
+    if (settings.name == null) return getNotFoundPage();
+
+    // Custom matching logic since RoutePilot Handles this natively inside Router/engine
+    // This is just a basic switch mimicking the user's requested structure.
+    switch (settings.name) {
+      case PilotRoutes.Home:
+        return PilotPage(
+          name: PilotRoutes.Home,
+          page: (context) => const HomePage(),
+          transition: Transition.ios,
+        );
+      case PilotRoutes.Second:
+        // Getting arguments for Navigator 1.0 fallback
+        final args = settings.arguments as Map<String, dynamic>?;
+        return PilotPage(
+          name: PilotRoutes.Second,
+          page: (context) => SecondPage(
+            name: args?['name'] as String? ?? 'Guest',
+            age: args?['age'] as int? ?? 0,
+            personData: args?['personData'] as PersonData? ??
+                PersonData(id: -1, title: 'No Data'),
+          ),
+          transition: Transition.ios,
+        );
+      case PilotRoutes.Param:
+        return PilotPage(
+          name: PilotRoutes.Param,
+          page: (context) => const ParamPage(),
+          transition: Transition.ios,
+        );
+      case PilotRoutes.Third:
+        return PilotPage(
+          name: PilotRoutes.Third,
+          page: (context) => const ThirdPage(),
+          transition: Transition.ios,
+        );
+      case PilotRoutes.Login:
+        return PilotPage(
+          name: PilotRoutes.Login,
+          page: (context) => const LoginPage(),
+          transition: Transition.ios,
+        );
+      default:
+        return getNotFoundPage();
+    }
+  }
+
+  static PilotPage getNotFoundPage() {
+    return PilotPage(
+      name: '/404',
+      page: (context) => const NotFoundPage(),
+    );
   }
 }
 
 // ----------------------------------------------------
 // 2. Strongly Typed Route Definition
 // ----------------------------------------------------
-final paramRoute = PilotRoute<void, void>('/param/:id');
+final paramRoute = PilotRoute<void, void>(PilotRoutes.Param);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -41,54 +161,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       // Use RoutePilot's new Router API configuration for Web URL sync & Deep Linking
       routerConfig: routePilot.getRouterConfig(
-        notFoundPage: PilotPage(
-          name: '/404',
-          page: (context) => const NotFoundPage(),
-        ),
-        pages: [
-          PilotPage(name: '/', page: (context) => const HomePage()),
-
-          PilotPage(
-            name: '/second',
-            page: (context) => SecondPage(
-              name: routePilot.arg<String>('name') ?? 'Guest',
-              age: routePilot.arg<int>('age') ?? 0,
-              personData: routePilot.getArguments<PersonData>() ??
-                  routePilot.arg<PersonData>('personData') ??
-                  PersonData(id: -1, title: 'No Data'),
-            ),
-            transition: Transition.scale,
-          ),
-
-          PilotPage(
-            name: '/param/:id',
-            page: (context) => const ParamPage(),
-          ),
-
-          PilotPage(
-            name: '/third',
-            page: (context) => const ThirdPage(),
-          ),
-
-          // ----------------------------------------------------
-          // 3. Using Route Groups
-          // ----------------------------------------------------
-          PilotRouteGroup(
-            prefix: '/dashboard',
-            middlewares: [AsyncAuthGuard()], // Secure all routes in dashboard
-            transition: Transition.fadeIn,
-            children: [
-              PilotPage(
-                  name: '/home', page: (context) => const ProtectedPage()),
-              PilotPage(
-                  name: '/settings',
-                  page: (context) =>
-                      const Scaffold(body: Center(child: Text('Settings')))),
-            ],
-          ),
-
-          PilotPage(name: '/login', page: (context) => const LoginPage()),
-        ],
+        notFoundPage: PilotPages.getNotFoundPage(),
+        pages: PilotPages.pages,
       ),
     );
   }
@@ -100,7 +174,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RoutePilot v1.0 Example')),
+      appBar: AppBar(title: const Text('RoutePilot v0.1.0 Example')),
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -116,7 +190,8 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 20),
               ElevatedButton(
                 child: const Text('Go to Second Page (Named w/ Map Arguments)'),
-                onPressed: () => routePilot.toNamed('/second', arguments: {
+                onPressed: () =>
+                    routePilot.toNamed(PilotRoutes.Second, arguments: {
                   'name': 'Paulose (Named)',
                   'age': 30,
                   'personData': PersonData(id: 102, title: 'Dart Engineer'),
@@ -173,7 +248,7 @@ class HomePage extends StatelessWidget {
                     backgroundColor: Colors.blueGrey,
                     foregroundColor: Colors.white),
                 child: const Text('Go to Dashboard (Async Auth Guard)'),
-                onPressed: () => routePilot.toNamed('/dashboard/home'),
+                onPressed: () => routePilot.toNamed(PilotRoutes.DashboardHome),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -210,7 +285,7 @@ class NotFoundPage extends StatelessWidget {
                 style: TextStyle(fontSize: 18)),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => routePilot.offAll('/'),
+              onPressed: () => routePilot.offAll(PilotRoutes.Home),
               child: const Text('Return Home'),
             ),
           ],
@@ -278,7 +353,7 @@ class SecondPage extends StatelessWidget {
             const SizedBox(height: 40),
             ElevatedButton(
               child: const Text('Go to Third Page'),
-              onPressed: () => routePilot.toNamed('/third'),
+              onPressed: () => routePilot.toNamed(PilotRoutes.Third),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -316,7 +391,7 @@ class ThirdPage extends StatelessWidget {
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white),
               child: const Text('Pop until Home Page (backUntil)'),
-              onPressed: () => routePilot.backUntil('/'),
+              onPressed: () => routePilot.backUntil(PilotRoutes.Home),
             ),
           ],
         ),
