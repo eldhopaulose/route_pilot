@@ -1,4 +1,4 @@
-## 0.1.0
+## 0.2.0
 ### Added
 - **Async Middleware**: `redirect()` now returns `FutureOr<String?>`. Optional global `middlewareLoadingWidget` added.
 - **Navigator 2.0 Web URL Sync**: `RoutePilot.getRouterConfig()` introduced for advanced Deep Linking and Browser URL Sync out of the box.
