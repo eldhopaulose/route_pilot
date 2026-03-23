@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
 /// A typedef for a function that builds a widget given a BuildContext.
@@ -10,9 +9,6 @@ typedef PilotPageBuilder = Widget Function(BuildContext context);
 class PilotPage<T> extends Page<T> {
   /// The function that builds the content of the page.
   final PilotPageBuilder page;
-
-  /// The name of the route, used for identification.
-  final String name;
 
   /// Whether the route is a full-screen dialog.
   final bool fullscreenDialog;
@@ -32,9 +28,6 @@ class PilotPage<T> extends Page<T> {
   /// Optional parameters to pass to the route.
   final Map<String, String>? parameters;
 
-  /// Optional arguments to pass to the route.
-  final Object? arguments;
-
   /// Constructor for PilotPage.
   ///
   /// [name] is required and used as the route's name and key.
@@ -47,7 +40,7 @@ class PilotPage<T> extends Page<T> {
   /// [parameters] are optional parameters passed to the route.
   /// [arguments] are optional arguments passed to the route.
   PilotPage({
-    required this.name,
+    required String name,
     required this.page,
     this.fullscreenDialog = false,
     this.transitionDuration,
@@ -55,11 +48,10 @@ class PilotPage<T> extends Page<T> {
     this.maintainState = true,
     this.opaque = true,
     this.parameters,
-    this.arguments,
+    super.arguments,
   }) : super(
           key: ValueKey(name),
           name: name,
-          arguments: arguments,
         );
 
   @override

@@ -9,7 +9,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:route_pilot_example/main.dart';
 
 void main() {
-  testWidgets('Route Pilot example app navigation test', (WidgetTester tester) async {
+  testWidgets('Route Pilot example app navigation test',
+      (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(MyApp());
 

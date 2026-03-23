@@ -203,14 +203,14 @@ class RoutePilot {
   /// Checks if a URL can be launched
   ///
   /// [url]: The URL to check
-  /// Returns a Future<bool> indicating whether the URL can be launched
+  /// Returns a `Future<bool>` indicating whether the URL can be launched
   Future<bool> canLaunchUrl(Uri url) => canLaunchUrl(url);
 
   /// Sets the navigation arguments
   ///
   /// [arguments]: The arguments to set
-  /// If arguments is a Map<String, dynamic>, it's wrapped in a List
-  /// If arguments is a List<Map<String, dynamic>>, it's set as is
+  /// If arguments is a `Map<String, dynamic>`, it's wrapped in a List
+  /// If arguments is a `List<Map<String, dynamic>>`, it's set as is
   /// Otherwise, arguments are set to null
   void _setArguments(dynamic arguments) {
     if (arguments is Map<String, dynamic>) {
@@ -224,7 +224,7 @@ class RoutePilot {
 
   /// Gets the navigation arguments
   ///
-  /// Returns a List<Map<String, dynamic>>? containing the arguments
+  /// Returns a `List<Map<String, dynamic>>?` containing the arguments
   List<Map<String, dynamic>>? get args {
     return _arguments as List<Map<String, dynamic>>?;
   }
@@ -247,7 +247,7 @@ class RoutePilot {
   /// Gets the argument map at a specific index
   ///
   /// [index]: The index of the argument map to retrieve
-  /// Returns the Map<String, dynamic>? at the specified index, or null if not found
+  /// Returns the `Map<String, dynamic>?` at the specified index, or null if not found
   Map<String, dynamic>? argsAt(int index) {
     if (_arguments is List && _arguments.length > index) {
       return _arguments[index] as Map<String, dynamic>?;

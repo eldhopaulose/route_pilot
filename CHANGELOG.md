@@ -1,3 +1,8 @@
+## 0.0.4
+
+- Improved pub.dev scores by adding topics and resolving strict lint warnings.
+- Fixed incorrectly formatted DartDoc brackets.
+
 ## 0.0.1
 
 - initial release.

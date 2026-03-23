@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:route_pilot/route_pilot.dart';
 
 void main() {
-  testWidgets('RoutePilot basic navigation methods test', (WidgetTester tester) async {
+  testWidgets('RoutePilot basic navigation methods test',
+      (WidgetTester tester) async {
     // Setup a MaterialApp with RoutePilot's navigatorKey
     await tester.pumpWidget(MaterialApp(
       navigatorKey: routePilot.navigatorKey,
