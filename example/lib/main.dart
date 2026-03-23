@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
         ),
         pages: [
           PilotPage(name: '/', page: (context) => const HomePage()),
-          
+
           PilotPage(
             name: '/second',
             page: (context) => SecondPage(
@@ -59,14 +59,14 @@ class MyApp extends StatelessWidget {
             ),
             transition: Transition.scale,
           ),
-          
+
           PilotPage(
             name: '/param/:id',
             page: (context) => const ParamPage(),
           ),
-          
+
           PilotPage(
-            name: '/third', 
+            name: '/third',
             page: (context) => const ThirdPage(),
           ),
 
@@ -78,8 +78,12 @@ class MyApp extends StatelessWidget {
             middlewares: [AsyncAuthGuard()], // Secure all routes in dashboard
             transition: Transition.fadeIn,
             children: [
-              PilotPage(name: '/home', page: (context) => const ProtectedPage()),
-              PilotPage(name: '/settings', page: (context) => const Scaffold(body: Center(child: Text('Settings')))),
+              PilotPage(
+                  name: '/home', page: (context) => const ProtectedPage()),
+              PilotPage(
+                  name: '/settings',
+                  page: (context) =>
+                      const Scaffold(body: Center(child: Text('Settings')))),
             ],
           ),
 
@@ -96,7 +100,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RoutePilot v2.0 Example')),
+      appBar: AppBar(title: const Text('RoutePilot v1.0 Example')),
       body: Center(
         child: SingleChildScrollView(
           child: Column(
@@ -129,7 +133,8 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                child: const Text('Show Global Loading Overlay (Closes after 2s)'),
+                child:
+                    const Text('Show Global Loading Overlay (Closes after 2s)'),
                 onPressed: () async {
                   routePilot.showLoading();
                   await Future.delayed(const Duration(seconds: 2));
@@ -138,8 +143,25 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
+                child: const Text('Show Dialog'),
+                onPressed: () => routePilot.dialog(const AlertDialog(
+                  title: Text('Dialog'),
+                  content: Text('This is a dialog'),
+                )),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                child: const Text('Show Bottom Sheet'),
+                onPressed: () => routePilot.bottomSheet(const AlertDialog(
+                  title: Text('Bottom Sheet'),
+                  content: Text('This is a bottom sheet'),
+                )),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
                 child: const Text('Show Queue-Safe SnackBar'),
-                onPressed: () => routePilot.snackBar('This overwrites previous Snackbars immediately!'),
+                onPressed: () => routePilot.snackBar(
+                    'This overwrites previous Snackbars immediately!'),
               ),
               const SizedBox(height: 30),
               const Divider(),
@@ -158,7 +180,8 @@ class HomePage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.redAccent,
                     foregroundColor: Colors.white),
-                child: const Text('Go to Unknown Route (Triggers 404 Fallback)'),
+                child:
+                    const Text('Go to Unknown Route (Triggers 404 Fallback)'),
                 onPressed: () => routePilot.toNamed('/random-broken-path'),
               ),
               const SizedBox(height: 30),
@@ -183,7 +206,8 @@ class NotFoundPage extends StatelessWidget {
           children: [
             const Icon(Icons.broken_image, size: 80, color: Colors.grey),
             const SizedBox(height: 20),
-            const Text('Oops! That page does not exist.', style: TextStyle(fontSize: 18)),
+            const Text('Oops! That page does not exist.',
+                style: TextStyle(fontSize: 18)),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => routePilot.offAll('/'),

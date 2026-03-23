@@ -57,6 +57,7 @@ class RoutePilot {
     return RouterConfig(
       routerDelegate: _routerDelegate!,
       routeInformationParser: PilotRouteInformationParser(),
+      backButtonDispatcher: RootBackButtonDispatcher(),
       routeInformationProvider: PlatformRouteInformationProvider(
         initialRouteInformation: RouteInformation(
           uri: Uri.parse(
@@ -183,8 +184,10 @@ class RoutePilot {
           .push<T>(pilotPage.createRoute(navigatorKey.currentContext!));
     }
 
-    return navigatorKey.currentState!
-        .push<T>(MaterialPageRoute(builder: (_) => page));
+    return navigatorKey.currentState!.push<T>(MaterialPageRoute(
+      builder: (_) => page,
+      settings: RouteSettings(name: page.runtimeType.toString()),
+    ));
   }
 
   /// Navigates to a named route

@@ -47,6 +47,17 @@ void main() {
     await tester.pumpAndSettle(); // Finish resolving and redirect
     expect(find.text('Login'), findsOneWidget);
 
+    final handledByRouter = await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(handledByRouter, isTrue);
+    expect(find.text('Nested Page'), findsOneWidget);
+
+    // Pop again to go back to Home
+    final handledAgain = await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(handledAgain, isTrue);
+    expect(find.text('Home'), findsOneWidget);
+
     // Not Found Page test
     routePilot.toNamed('/does-not-exist');
     await tester.pumpAndSettle();

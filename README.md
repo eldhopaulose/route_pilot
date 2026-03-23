@@ -272,6 +272,16 @@ Add any URL schemes passed to `canLaunchUrl` as `LSApplicationQueriesSchemes` en
 
 ### Android Configuration
 
+**1. Predictive Back Navigation (Android 13+)**
+To properly support Android's predictive back gestures without errors or app exits, ensure you enable the back invoked callback in your `<application>` tag in `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<application
+    ...
+    android:enableOnBackInvokedCallback="true">
+```
+
+**2. URL Launching Intents**
 Add any URL schemes passed to `canLaunchUrl` as `<queries>` entries in your `AndroidManifest.xml`:
 
 ```xml
@@ -390,6 +400,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 This project is maintained by [Eldho Paulose](https://github.com/eldhopaulose).
 
 - **GitHub:** [eldhopaulose](https://github.com/eldhopaulose)
-- **Website:** [Eldho Paulose](https://eldhopaulose.info)
+- **Website:** [Eldho Paulose](https://eldhopaulose.github.io)
 
 Feel free to reach out for any questions or suggestions regarding this project!

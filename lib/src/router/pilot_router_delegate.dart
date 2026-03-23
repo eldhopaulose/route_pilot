@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../route_pilot.dart';
 import '../pilot_page.dart';
 
@@ -37,6 +38,16 @@ class PilotRouterDelegate extends RouterDelegate<String>
         notFoundPage: notFoundPage,
       ),
     );
+  }
+
+  @override
+  Future<bool> popRoute() {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) {
+      return SynchronousFuture(false);
+    }
+
+    return navigator.maybePop();
   }
 
   @override
